@@ -22,7 +22,7 @@ static FRESULT Tran_ADC_V(void);
 
 int main(void)
 {
-	//
+	//程序修订
 	u8 res=0;
 	u8 step;//向DMA缓冲器内存储的步进
 	delay_init();
