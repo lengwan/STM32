@@ -1,34 +1,45 @@
 #include "main.h"
 #define MAX_FILE_SIZE 100
-// ADC1转换的电压值通过MDA方式传到SRAM
 extern __IO uint16_t ADC_ConvertedValue[NOFCHANEL];
-// 局部变量，用于保存转换计算后的电压值 	 
 float ADC_ConvertedValueLocal[NOFCHANEL]; 
 int name_i=0;
 int tra_i=0;
 int tra_j=0;
-char excel_top_name[50]="ADC1,ADC2,ADC3,ADC4\r\n";
+char excel_top_name[100]="ADC1,ADC2,ADC3,ADC4\r\n";
 char name_budder[20];
 u8 *temp_adr=SDIO_DATA_BUFFER;
 
 char Adc_Dma_Flag=0;
 
 
+
 void Fat_init(u8 res_flash);
 static FRESULT Get_Dev_Infor(void);
-static FRESULT Creat_Excel(char *name_budder,char *excel_top_name);//文件名，表头
+static FRESULT Creat_File(char *name_budder,char *excel_top_name);//文件名，表头
 static FRESULT Tran_ADC_V(void);
+void  ADC_Caiji_Mode(void);
+static FRESULT Write_One_shuju(char *name_budder, char *str);
+
+
 
 
 int main(void)
 {
 	//
 	u8 res=0;
-	u8 step;//向DMA缓冲器内存储的步进
+	uint32_t BJ_TimeVar;
 	delay_init();
 	USART_Config();
 	RTC_NVIC_Config();
 	RTC_CheckAndConfig(&systmtime);
+	BJ_TimeVar =RTC_GetCounter() + TIME_ZOOM;
+	to_tm(BJ_TimeVar, &systmtime);/*把定时器的值转换为北京时间*/	
+	
+	Time_Base_Dingshi_Mode(7200-1,10000-1);
+	
+	
+	
+	
 	ILI9341_Init ();         //LCD 初始化
 	ILI9341_GramScan ( 6 );
 	LCD_SetFont(&Font16x24);
@@ -37,7 +48,10 @@ int main(void)
   ILI9341_Clear(0,0,LCD_X_LENGTH,LCD_Y_LENGTH);	/* 清屏，显示全黑 */
 	/********显示字符串示例*******/
   ILI9341_DispStringLine_EN(LINE(0),"   LCD    ");
+#if GET_ADC_VCC_MODE
 	ADCx_Init();
+#endif
+
 	
 //			/* 配置RTC秒中断优先级 */
 
@@ -50,41 +64,40 @@ int main(void)
 	Fat_init(res);
 	LCD_ClearLine(LINE(1));
 	ILI9341_DispStringLine_EN(LINE(1),"SD OK");
-	
-	
-	
-	
 	Get_Dev_Infor();
-	//初始化文件
+#if GET_ADC_VCC_MODE
+	//初始化文件   ADC_VCC_HZ
+	ILI9341_DispStringLine_EN(LINE(1),"ADC RECIEVE MODE");
 	sprintf(name_budder,"%s","ADC_VCC_10HZ.csv");
 	sprintf(excel_top_name,"%s","ADC\r\n");
-	Creat_Excel(name_budder,excel_top_name);
-	//git_test
+	Creat_File(name_budder,excel_top_name);
+#endif
+
+
+/************测量SD读写次数*****************/
+#if TEST_SD_NUM_MODE
+	ILI9341_DispStringLine_EN(LINE(2),"SD TEST MODE");
+	sprintf(name_budder,"%s","SD_test.txt");
+	sprintf(excel_top_name,"\r\n%d-%d-%d  %d:%d:%d\r\n",systmtime.tm_year,systmtime.tm_mon,systmtime.tm_mday,systmtime.tm_hour,systmtime.tm_min,systmtime.tm_sec);
+	//Creat_File(name_budder,excel_top_name);
+	Write_One_shuju(name_budder,excel_top_name);
 	
 	
-	while(1)
+	
+	SD_Test_Init(3000,0,5);//3000块，0次开始，5s
+#endif
+
+
+
+
+
+
+while(1)
 	{
-		if(Adc_Dma_Flag==1)
-		{
-			Adc_Dma_Flag=0;//清除标志位
-			ADC_ConvertedValueLocal[0] =(float) ADC_ConvertedValue[0]/4096*3.3;//转换成电压值
-			sprintf((char *)temp_adr,"%.5f\r\n",ADC_ConvertedValueLocal[0]);//保存成5位小数形式
-			step=7*1+2;
-			temp_adr+=step;
-			tra_i++;
-			if((tra_i+1)*step>=1024)//大于缓存区，启动传输
-			{
-				//传输
-				tra_i=0;
-				temp_adr=SDIO_DATA_BUFFER;//恢复到起始位置
-				Tran_ADC_V();
-//				if(++tra_j>MAX_FILE_SIZE)
-//				{
-//					tra_j=0;
-//					Creat_Excel();					
-//				}
-			}
-		}
+#if GET_ADC_VCC_MODE
+		ADC_Caiji_Mode();//ADC采集功能
+#endif
+
 			
 	}
 }
@@ -117,12 +130,12 @@ static FRESULT Get_Dev_Infor()
 }
 
 /*创建excel表格*/
-static FRESULT Creat_Excel(char *name_budder,char *excel_top_name)
+static FRESULT Creat_File(char *name_budder,char *excel_top_name)
 {
 	 UINT br; 
 	 //sprintf(name_budder,"0:ADC统计信息%d.csv",name_i++);
 	 res_flash = f_open(&fnew,name_budder,FA_WRITE|FA_CREATE_ALWAYS);
-	 res_flash = f_write(&fnew,excel_top_name,sizeof(excel_top_name),&br);
+	 res_flash = f_write(&fnew,excel_top_name,strlen(excel_top_name),&br);
 	 f_close(&fnew);    
 	return res_flash;
 }
@@ -145,9 +158,24 @@ static FRESULT Tran_ADC_V(void)
 	return res_flash;
 }
 
+/***向文件写入一行数据******/
 
-
-
+static FRESULT Write_One_shuju(char *name_budder, char *str)
+{
+	 UINT br; 
+	 res_flash = f_open(&fnew,name_budder,FA_WRITE|FA_OPEN_ALWAYS);
+	if ( res_flash == FR_OK )
+	{
+		 res_flash = f_lseek(&fnew,f_size(&fnew));
+		 if ( res_flash == FR_OK )
+		{
+			res_flash = f_write(&fnew,str,strlen(str),&br);
+			//printf("写成功");
+		}
+	}
+	 f_close(&fnew);
+	return res_flash;
+}
 
 
 //挂载文件系统
@@ -187,4 +215,58 @@ void Fat_init(u8 res_flash)
 
 
 
+void  ADC_Caiji_Mode()
+{
+		u8 step;//向DMA缓冲器内存储的步进
 
+		if(Adc_Dma_Flag==1)
+		{
+			Adc_Dma_Flag=0;//清除标志位
+			ADC_ConvertedValueLocal[0] =(float) ADC_ConvertedValue[0]/4096*3.3;//转换成电压值
+			sprintf((char *)temp_adr,"%.5f\r\n",ADC_ConvertedValueLocal[0]);//保存成5位小数形式
+			step=7*1+2;
+			temp_adr+=step;
+			tra_i++;
+			if((tra_i+1)*step>=1024)//大于缓存区，启动传输
+			{
+				//传输
+				tra_i=0;
+				temp_adr=SDIO_DATA_BUFFER;//恢复到起始位置
+				Tran_ADC_V();
+			}
+		}
+}
+
+
+
+
+void  SD_Test_Init(u32 blr,u32 times,u8 sec)
+{
+	int i;
+	u32 tim_fir,tim_end,tim_cishu;
+	my_sd_data.test_times=sec;//读写速度测试时间为5S
+	my_sd_data.test_blc.block_num=blr;
+	//初始次数
+	my_sd_data.test_times=times;
+	
+	
+	
+	for(i=0;i<512;i++)
+	{
+		my_sd_data.buf0[i]=0x00;
+		my_sd_data.buf1[i]=0xff;
+	}
+	
+	tim_fir=my_sd_data.test_times;
+	
+	//开启定时器
+	Ding_Con_time=sec;
+	while(Ding_Con_time!=0)
+	{
+		//写入
+		SD_WriteBlock(my_sd_data.buf0,blr<<9,512);
+
+	}
+
+	
+}

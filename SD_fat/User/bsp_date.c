@@ -17,8 +17,8 @@
 #include "bsp_date.h"
 
 #define FEBRUARY		2
-#define	STARTOFTIME		1978
-#define BUCHANG      4700000+14*SECDAY+9*60*60+40*60
+#define	STARTOFTIME		1978+14
+#define BUCHANG      4700000+73*SECDAY-15*60
 #define SECDAY			86400L           /*  一天有多少s */
 #define SECYR			(SECDAY * 365)
 #define	leapyear(year)		((year) % 4 == 0)

@@ -23,6 +23,11 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
+#include "bsp_usart.h"
+
+
+
+
 extern char Adc_Dma_Flag;
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
@@ -184,6 +189,20 @@ void DMA1_Channel1_IRQHandler(void)
 	}
 
 
+}
+
+
+
+//¶¨Ê±Æ÷ÖÐ¶Ï
+
+void TIM6_IRQHandler(void)
+{
+	if(TIM_GetITStatus(TIM6,TIM_IT_Update)!=RESET)
+	{
+		printf("1111111");
+		
+		TIM_ClearFlag(TIM6,TIM_IT_Update);
+	}
 }
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
