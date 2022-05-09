@@ -25,7 +25,7 @@ static FRESULT Write_One_shuju(char *name_budder, char *str);
 
 int main(void)
 {
-	//
+	//≥Ã–Ú–ﬁ∂©
 	u8 res=0;
 	uint32_t BJ_TimeVar;
 	delay_init();
