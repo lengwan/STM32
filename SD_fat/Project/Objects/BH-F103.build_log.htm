@@ -21,22 +21,33 @@ Target DLL:      CMSIS_AGDI.dll V1.21.0.0
 Dialog DLL:      TCM.DLL V1.14.4.0
  
 <h2>Project:</h2>
-E:\learn\stm32\output\SD_Fat\SD_Fat\Fwlib-Template\Project\BH-F103.uvprojx
-Project File Date:  03/28/2022
+E:\demo_code\text\STM32\SD_fat\Project\BH-F103.uvprojx
+Project File Date:  05/07/2022
 
 <h2>Output:</h2>
 Build target 'Target 1'
 compiling main.c...
-linking...
-Program Size: Code=30274 RO-data=191962 RW-data=272 ZI-data=1055056  
-FromELF: creating hex file...
-".\Objects\BH-F103.axf" - 0 Error(s), 0 Warning(s).
+..\User\main.c(266): error:  #29: expected an expression
+                SD_WriteBlock(my_sd_data.buf0,blr<<9,)
+..\User\main.c(267): error:  #65: expected a ";"
+        }
+..\User\main.c(246): warning:  #550-D: variable "tim_fir" was set but never used
+        u32 tim_fir,tim_end,tim_cishu;
+..\User\main.c(246): warning:  #177-D: variable "tim_end" was declared but never referenced
+        u32 tim_fir,tim_end,tim_cishu;
+..\User\main.c(246): warning:  #177-D: variable "tim_cishu" was declared but never referenced
+        u32 tim_fir,tim_end,tim_cishu;
+..\User\main.c(133): warning:  #177-D: function "Creat_File" was declared but never referenced
+  static FRESULT Creat_File(char *name_budder,char *excel_top_name)
+..\User\main.c: 4 warnings, 2 errors
+".\Objects\BH-F103.axf" - 2 Error(s), 4 Warning(s).
 
 <h2>Collection of Component include folders:</h2>
-  E:\learn\stm32\output\SD_Fat\SD_Fat\Fwlib-Template\Project\RTE
+  E:\demo_code\text\STM32\SD_fat\Project\RTE
   D:\keil\ARM\PACK\Keil\STM32F1xx_DFP\1.0.5\Device\Include
 
 <h2>Collection of Component Files used:</h2>
+Target not created.
 </pre>
 </body>
 </html>

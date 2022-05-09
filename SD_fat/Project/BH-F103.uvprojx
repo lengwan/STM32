@@ -628,6 +628,11 @@
               <FileType>1</FileType>
               <FilePath>..\User\bsp_ili9341_lcd.c</FilePath>
             </File>
+            <File>
+              <FileName>mytime.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\mytime.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
