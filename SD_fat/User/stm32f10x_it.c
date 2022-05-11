@@ -29,6 +29,7 @@
 
 
 extern char Adc_Dma_Flag;
+extern char  Ding_Con_time,Ding_Set_time;
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
   */
@@ -199,8 +200,13 @@ void TIM6_IRQHandler(void)
 {
 	if(TIM_GetITStatus(TIM6,TIM_IT_Update)!=RESET)
 	{
-		printf("1111111");
-		
+		Ding_Con_time++;
+		if(Ding_Con_time>=Ding_Set_time)
+		{
+			Ding_Con_time=0;
+			Ding_Set_time=0;
+			TIM_Cmd(TIM6,DISABLE);
+		}
 		TIM_ClearFlag(TIM6,TIM_IT_Update);
 	}
 }

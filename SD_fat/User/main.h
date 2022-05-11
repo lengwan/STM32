@@ -28,32 +28,57 @@ struct rtc_time systmtime=
 {
 0,0,0,1,1,2000,0
 };
+uint32_t BJ_TimeVar;
+
+
+
+
+
+//定时器时间
+char Ding_Con_time=0,Ding_Set_time=0;
+
+
+
 
 #if TEST_SD_NUM_MODE
+
+#define ERROR_NUM 1
+
+
 typedef struct
 {
 	u32 times;//擦写次数
-	u32 block_num;//地址
+	long long  block_num;//地址
 }SD_BLOCK;
 
-
+typedef struct
+{
+	u8 buf[512];
+}shu_nuf;
 
 typedef struct
 {
 	u32 speed;//1S内读写次数
 	u8 test_times;//测试速度时间
 	SD_BLOCK test_blc;
-	u8 buf1[512];
-	u8 buf0[512];
-
+	shu_nuf mshu_nuf[2];
+	u8 read_buf[512];
+	
+	
+	u8 err_data[ERROR_NUM];
+	u16 err_index[ERROR_NUM];
+	
+	u8 now_err;
+	u8 write_flag;
+	
+	
 }SD_TEST;
 SD_TEST my_sd_data;
 
 
-//定时器时间
-u8 Ding_Con_time=0;
 
 void  SD_Test_Init(u32 blr,u32 times,u8 sec);
+u8  Sd_Data_jiaoyan(char mode);
 
 
 

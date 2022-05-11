@@ -14,13 +14,14 @@ void Time_Base_Dingshi_Mode(u16 per,u16 pre)
 	TIM_TimeBaseInitStruct.TIM_Prescaler=pre;
 	TIM_TimeBaseInit(TIM6,&TIM_TimeBaseInitStruct);
 	TIM_Cmd(TIM6,DISABLE);
-	TIM_ITConfig(TIM6,TIM_IT_Update,ENABLE);
 	
 	NVIC_InitStruct.NVIC_IRQChannel=TIM6_IRQn;
 	NVIC_InitStruct.NVIC_IRQChannelCmd=ENABLE;
 	NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority=2;
 	NVIC_InitStruct.NVIC_IRQChannelSubPriority=2;
 	NVIC_Init(&NVIC_InitStruct);
+	TIM_ClearFlag(TIM6,TIM_IT_Update);
+	TIM_ITConfig(TIM6,TIM_IT_Update,DISABLE);
 }
 
 
