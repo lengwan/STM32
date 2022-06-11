@@ -1,5 +1,18 @@
 #include "main.h"
-#define MAX_FILE_SIZE 100
+
+/****************全局变量***********************/
+/*时间结构体，默认时间2000-01-01 00:00:00*/
+struct rtc_time systmtime=
+{
+0,0,0,1,1,2000,0
+};
+uint32_t BJ_TimeVar;
+SD_TEST my_sd_data;
+//定时器时间
+char Ding_Con_time=0,Ding_Set_time=0;
+FATFS fs;													/* FatFs文件系统对象 */
+FIL fnew;													/* 文件对象 */
+FRESULT res_sd,res_flash;                /* 文件操作结果 */
 extern __IO uint16_t ADC_ConvertedValue[NOFCHANEL];
 float ADC_ConvertedValueLocal[NOFCHANEL]; 
 int name_i=0;
@@ -9,23 +22,10 @@ u8 stop_flag=1;
 char write_data[100]="ADC1,ADC2,ADC3,ADC4\r\n";
 char name_budder[20];
 u8 *temp_adr=SDIO_DATA_BUFFER;
-
 char Adc_Dma_Flag=0;
-
-
-
-void Fat_init(u8 res_flash);
-static FRESULT Get_Dev_Infor(void);
-static FRESULT Creat_File(char *name_budder,char *excel_top_name);//文件名，表头
-static FRESULT Tran_ADC_V(void);
-void  ADC_Caiji_Mode(void);
-static FRESULT Write_One_shuju(char *name_budder, char *str);
-void save_log(char *str,char mode);
-void save_state_log(void);
-
-void save_error_log(void);
-u8 Xie_Du_Test(u8 mode,u8 jiaoyan_flag);
 u32 Du_cishu=0;
+
+
 
 
 int main(void)
@@ -65,7 +65,7 @@ int main(void)
 	fs.drv=0;
 	res=f_mount(&fs,"0:",1);
 	ILI9341_DispStringLine_EN(LINE(1),"TEST SD");
-	Fat_init(res);
+	sdfat_init(res);
 	LCD_ClearLine(LINE(1));
 	ILI9341_DispStringLine_EN(LINE(1),"SD OK");
 	Get_Dev_Infor();
@@ -212,7 +212,7 @@ static FRESULT Write_One_shuju(char *name_budder, char *str)
 
 
 //挂载文件系统
-void Fat_init(u8 res_flash)
+void sdfat_init(u8 res_flash)
 {
 	if(res_flash == FR_NO_FILESYSTEM)
 	{
@@ -276,7 +276,6 @@ void  ADC_Caiji_Mode()
 void  SD_Test_Init(u32 blr,u32 times,u8 sec)
 {
 	int i;
-	u8 flag;
 	char temp[100];
 	u32 tim_fir,tim_cishu;
 	my_sd_data.test_times=sec;//读写速度测试时间为5S
@@ -305,35 +304,39 @@ void  SD_Test_Init(u32 blr,u32 times,u8 sec)
     Xie_Du_Test(1,0);
 
 	}
+	sd_read_speed_test();
 	tim_cishu=my_sd_data.test_blc.times-tim_fir;
 	my_sd_data.speed=tim_cishu/sec;
 	sprintf(temp,"测试的块号:%lld  当前读写次数:%d   平均写速度：%d次每秒  %dKB每秒",my_sd_data.test_blc.block_num>>9,my_sd_data.test_blc.times,my_sd_data.speed,my_sd_data.speed/2);
 	save_log(temp,1);
-//	Ding_Set_time=3;
-//	TIM_Cmd(TIM6,ENABLE);
-//	TIM_ITConfig(TIM6,TIM_IT_Update,ENABLE);
-//	while(Ding_Set_time>0)
-//	{
-//		delay_us(300);
-//		if(SD_ReadBlock(my_sd_data.read_buf,my_sd_data.test_blc.block_num,512))
-//		{
-//			//读出错误
-//			//save_log("Read Error",1);
-//			//save_error_log();
-//		}
-//		Du_cishu++;
-//	}
-//	delay_us(300);
-//	flag=SD_ReadBlock(my_sd_data.read_buf,my_sd_data.test_blc.block_num,512);
-//	sprintf(temp,"最大读速度%d次每s  %dKB每秒  错误代码:%d ",Du_cishu/3,Du_cishu/6,flag);
-//	printf("hhh:%d",flag);
-//	save_log(temp,1);
 	ILI9341_DispStringLine_EN(LINE(2),"SD Begin");
 	
 }
 
 
-
+void sd_read_speed_test(void)
+{	
+	char temp[100];
+	u8 flag;
+	Ding_Set_time=3;
+	TIM_Cmd(TIM6,ENABLE);
+	TIM_ITConfig(TIM6,TIM_IT_Update,ENABLE);
+	while(Ding_Set_time>0)
+	{
+		delay_us(300);
+		if(SD_ReadBlock(my_sd_data.read_buf,my_sd_data.test_blc.block_num,512))
+		{
+			//读出错误
+			save_log("Read Error",1);
+			save_error_log();
+		}
+		Du_cishu++;
+	}
+	delay_us(300);
+	flag=SD_ReadBlock(my_sd_data.read_buf,my_sd_data.test_blc.block_num,512);
+	sprintf(temp,"最大读速度%d次每s  %dKB每秒  错误代码:%d ",Du_cishu/3,Du_cishu/6,flag);
+	save_log(temp,1);
+}
 //0是写0
 u8 Xie_Du_Test(u8 mode,u8 jiaoyan_flag)
 {
@@ -421,33 +424,27 @@ u8  Sd_Data_jiaoyan(char mode)
 
 
 //mode==0 不追加时间信息
-void save_log(char *str,char mode)
+void save_log(char *str,char time_flag,char err_flg,char state_flag)
 {
-	if(mode==1)
+	if(time_flag==1)
 	{
 		BJ_TimeVar =RTC_GetCounter() + TIME_ZOOM;
 		to_tm(BJ_TimeVar, &systmtime);/*把定时器的值转换为北京时间*/	
 		sprintf(write_data,"%d:%d:%d   ",systmtime.tm_hour,systmtime.tm_min,systmtime.tm_sec);
 		Write_One_shuju(name_budder,write_data);
 	}
+	if(err_flg==1)
+	{
+		sprintf(temp,"当前的块号:%lld  当前读写次数:%d    读写速度：%d次每s",my_sd_data.test_blc.block_num>>9,my_sd_data.test_blc.times,my_sd_data.speed);
+		Write_One_shuju(name_budder,write_data);
+	}
+	if(state_flag==1)
+	{
+		sprintf(temp,"当前的块号:%lld  当前读写次数:%d 未出现异常",my_sd_data.test_blc.block_num>>9,my_sd_data.test_blc.times);
+		Write_One_shuju(name_budder,write_data);
+	}
 	sprintf(write_data,"%s\r\n",str);
 	Write_One_shuju(name_budder,write_data);
 }
 
-void save_error_log()
-{
-	//写入错误的log
-	//读写次数
-	char temp[100];
-	sprintf(temp,"当前的块号:%lld  当前读写次数:%d    读写速度：%d次每s",my_sd_data.test_blc.block_num>>9,my_sd_data.test_blc.times,my_sd_data.speed);
-	save_log(temp,0);
-}
-
-void save_state_log()
-{
-		char temp[100];
-		sprintf(temp,"当前的块号:%lld  当前读写次数:%d 未出现异常",my_sd_data.test_blc.block_num>>9,my_sd_data.test_blc.times);
-		save_log(temp,1);
-
-}
 #endif

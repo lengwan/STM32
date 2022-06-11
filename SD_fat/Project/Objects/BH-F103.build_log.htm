@@ -27,17 +27,23 @@ Project File Date:  05/09/2022
 <h2>Output:</h2>
 Build target 'Target 1'
 compiling main.c...
-..\User\main.c(279): warning:  #177-D: variable "flag" was declared but never referenced
-        u8 flag;
-..\User\main.c(453): warning:  #1-D: last line of file ends without a newline
+..\User\main.c(34): warning:  #177-D: variable "flag" was declared but never referenced
+        u8 res=0,flag;
+..\User\main.c(35): warning:  #177-D: variable "cehc_flg" was declared but never referenced
+        u8 cehc_flg=0,open_check=0;
+..\User\main.c(35): warning:  #177-D: variable "open_check" was declared but never referenced
+        u8 cehc_flg=0,open_check=0;
+..\User\main.c(450): warning:  #1-D: last line of file ends without a newline
   #endif
 ..\User\main.c(166): warning:  #177-D: function "Creat_File" was declared but never referenced
   static FRESULT Creat_File(char *name_budder,char *excel_top_name)
-..\User\main.c: 3 warnings, 0 errors
+..\User\main.c(196): warning:  #177-D: function "Write_One_shuju" was declared but never referenced
+  static FRESULT Write_One_shuju(char *name_budder, char *str)
+..\User\main.c: 6 warnings, 0 errors
 linking...
-Program Size: Code=30174 RO-data=192030 RW-data=336 ZI-data=1056632  
+Program Size: Code=23484 RO-data=15644 RW-data=332 ZI-data=1050484  
 FromELF: creating hex file...
-".\Objects\BH-F103.axf" - 0 Error(s), 3 Warning(s).
+".\Objects\BH-F103.axf" - 0 Error(s), 6 Warning(s).
 
 <h2>Collection of Component include folders:</h2>
   E:\demo_code\text\STM32\SD_fat\Project\RTE

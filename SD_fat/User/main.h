@@ -18,33 +18,10 @@
 
 
 #define GET_ADC_VCC_MODE 0  //ADC电压采集模式
-#define TEST_SD_NUM_MODE 1
-/****************变量***********************/
-FATFS fs;													/* FatFs文件系统对象 */
-FIL fnew;													/* 文件对象 */
-FRESULT res_sd,res_flash;                /* 文件操作结果 */
-/*时间结构体，默认时间2000-01-01 00:00:00*/
-struct rtc_time systmtime=
-{
-0,0,0,1,1,2000,0
-};
-uint32_t BJ_TimeVar;
+#define MAX_FILE_SIZE 100
+#define SD_CHECK_ERROR_NUM 1
 
-
-
-
-
-//定时器时间
-char Ding_Con_time=0,Ding_Set_time=0;
-
-
-
-
-#if TEST_SD_NUM_MODE
-
-#define ERROR_NUM 1
-
-
+/***********结构体定义*****************/
 typedef struct
 {
 	u32 times;//擦写次数
@@ -54,33 +31,56 @@ typedef struct
 typedef struct
 {
 	u8 buf[512];
-}shu_nuf;
+}NUM_BUF;
 
 typedef struct
 {
 	u32 speed;//1S内读写次数
 	u8 test_times;//测试速度时间
 	SD_BLOCK test_blc;
-	shu_nuf mshu_nuf[2];
+	NUM_BUF mshu_nuf[2];
 	u8 read_buf[512];
-	
-	
-	u8 err_data[ERROR_NUM];
-	u16 err_index[ERROR_NUM];
-	
+	u8 err_data[SD_CHECK_ERROR_NUM];
+	u16 err_index[SD_CHECK_ERROR_NUM];
 	u8 now_err;
 	u8 write_flag;
-	
-	
 }SD_TEST;
-SD_TEST my_sd_data;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+/***********************************函数声明************************/
+
+void sd_read_speed_test(void);
+void sdfat_init(u8 res_flash);
+static FRESULT Get_Dev_Infor(void);
+static FRESULT Creat_File(char *name_budder,char *excel_top_name);//文件名，表头
+//static FRESULT Tran_ADC_V(void);
+void  ADC_Caiji_Mode(void);
+static FRESULT Write_One_shuju(char *name_budder, char *str);
+void save_log(char *str,char time_flag,char err_flg,char state_flag);
+u8 Xie_Du_Test(u8 mode,u8 jiaoyan_flag);
+
+
+
+
+
+/*******************功能条件选择*******************/
+#define TEST_SD_MODE 1
+
+#if TEST_SD_MODE
 void  SD_Test_Init(u32 blr,u32 times,u8 sec);
 u8  Sd_Data_jiaoyan(char mode);
-
-
 
 #endif
 
