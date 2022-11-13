@@ -45,3 +45,5 @@
 .\objects\main.o: ..\User\bsp_ili9341_lcd.h
 .\objects\main.o: ..\User\fonts.h
 .\objects\main.o: ..\User\fonts.h
+.\objects\main.o: D:\keil\ARM\ARMCC\Bin\..\include\string.h
+.\objects\main.o: ..\User\mytime.h
